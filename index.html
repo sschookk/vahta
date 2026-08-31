@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Смены">
 <meta name="robots" content="noindex, nofollow">
+<meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="pragma" content="no-cache">
 <title>Смены и выплаты</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,7 +71,7 @@ input[type=date],input[type=number],input[type=text],select{
   color:var(--ink);font:inherit;font-family:"IBM Plex Mono",monospace;font-size:14px}
 input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
 .check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);margin-top:22px}
-.check input{width:auto}
+.check input{width:20px;height:20px;accent-color:var(--accent);flex:0 0 auto}
 .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
 th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);text-align:left;
@@ -121,6 +123,7 @@ button.act:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .state{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);margin-bottom:8px}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-3);flex:0 0 auto}
 .dot.on{background:var(--good)} .dot.err{background:var(--bad)}
+input.dateinp{max-width:170px}
 input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 0 0 2px var(--shift-soft)}
 .fixnote{display:block;font-family:"IBM Plex Sans",sans-serif;font-size:11px;color:var(--shift);margin-top:3px}
 .warnbar{border:1px solid var(--shift);background:var(--shift-soft);color:var(--ink);
@@ -154,6 +157,22 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
   .hint{font-size:12px}
   button.act{font-size:14px;padding:9px 14px}
   table.stack td:empty{display:none}
+  #t-shifts.stack tr, #t-arch.stack tr{
+    display:grid;grid-template-columns:1fr 1fr auto;gap:8px 10px;padding:12px 0;align-items:end}
+  #t-shifts.stack td, #t-arch.stack td{display:block;padding:0}
+  #t-shifts.stack td::before, #t-arch.stack td::before{display:block;margin-bottom:3px}
+  #t-shifts.stack td:nth-child(1), #t-arch.stack td:nth-child(1){grid-column:1;grid-row:1}
+  #t-shifts.stack td:nth-child(2), #t-arch.stack td:nth-child(2){grid-column:2;grid-row:1}
+  #t-shifts.stack td:nth-child(3), #t-arch.stack td:nth-child(3),
+  #t-shifts.stack td:nth-child(4), #t-arch.stack td:nth-child(4){
+    grid-row:2;display:flex;align-items:center;gap:6px}
+  #t-shifts.stack td:nth-child(3)::before, #t-arch.stack td:nth-child(3)::before,
+  #t-shifts.stack td:nth-child(4)::before, #t-arch.stack td:nth-child(4)::before{
+    display:inline;margin:0}
+  #t-shifts.stack td:nth-child(5), #t-arch.stack td:nth-child(5){
+    grid-column:3;grid-row:1/3;align-self:center}
+  input.dateinp{max-width:100%}
+  .dow{margin-left:4px}
   .tablewrap{overflow-x:visible}
   .hint{font-size:11px}
 }
@@ -375,7 +394,7 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
 
     var td1=document.createElement("td");
     var inp=document.createElement("input");
-    inp.type="date"; inp.value=d2s(sh.start); inp.style.maxWidth="170px";
+    inp.type="date"; inp.value=d2s(sh.start); inp.className="dateinp";
     inp.addEventListener("change",function(){
       if(inp.value){ delete autoFix[String(sh.i)]; S.overrides[String(sh.i)]=inp.value; save(); render(); }
     });
@@ -392,7 +411,7 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
 
     var td2=document.createElement("td");
     var inpH=document.createElement("input");
-    inpH.type="date"; inpH.value=d2s(sh.home); inpH.style.maxWidth="170px";
+    inpH.type="date"; inpH.value=d2s(sh.home); inpH.className="dateinp";
     inpH.addEventListener("change",function(){
       if(!inpH.value) return;
       var nh=s2d(inpH.value);
