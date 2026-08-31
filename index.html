@@ -186,6 +186,7 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" id="tab-graf" aria-selected="true" aria-controls="p-graf">График</button>
     <button class="tab" role="tab" id="tab-money" aria-selected="false" aria-controls="p-money">Деньги</button>
+    <button class="tab" role="tab" id="tab-arch" aria-selected="false" aria-controls="p-arch">Архив</button>
   </div>
 
   <section id="p-graf" role="tabpanel" aria-labelledby="tab-graf">
@@ -215,17 +216,6 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
           <tbody></tbody>
         </table>
       </div>
-      <details id="arch">
-        <summary id="arch-sum">Архив</summary>
-        <div class="tablewrap">
-          <table id="t-arch" class="stack">
-            <thead><tr>
-              <th>Выезд</th><th>Домой</th><th class="num">Дней</th><th class="num">Дома</th><th></th>
-            </tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </details>
       <p class="hint">Обе даты правятся руками прямо в строке. Если новый приезд делает смену короче, чем задано в «Дней в смене», выезд сдвигается автоматически и подсвечивается жёлтым — но его можно тут же поправить руками, тогда смена останется короткой и больше ничего не сдвинется. Кнопка со стрелкой возвращает автоматический расчёт для этой смены.</p>
     </div>
 
@@ -252,6 +242,21 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
     <div class="kpis" id="kpis"></div>
 
     <div class="card">
+      <h2>Выплаты</h2>
+      <div class="panel-inline">
+        <div><label for="p-date">Дата</label><input type="date" id="p-date"></div>
+        <div><label for="p-sum">Сумма</label><input type="number" id="p-sum" min="0" step="0.01"></div>
+        <div><label for="p-note">Комментарий</label><input type="text" id="p-note" placeholder="аванс"></div>
+        <div><button class="act primary" id="p-add">Добавить</button></div>
+      </div>
+      <div class="tablewrap" style="margin-top:14px">
+        <table id="t-pays" class="stack">
+          <thead><tr><th>Дата</th><th class="num">Сумма</th><th>Комментарий</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
       <h2>По месяцам</h2>
       <div class="tablewrap">
         <table id="t-months" class="stack">
@@ -263,17 +268,25 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
       </div>
     </div>
 
+  </section>
+
+  <section id="p-arch" role="tabpanel" aria-labelledby="tab-arch" class="hidden">
     <div class="card">
-      <h2>Выплаты</h2>
-      <div class="panel-inline">
-        <div><label for="p-date">Дата</label><input type="date" id="p-date"></div>
-        <div><label for="p-sum">Сумма</label><input type="number" id="p-sum" min="0" step="0.01"></div>
-        <div><label for="p-note">Комментарий</label><input type="text" id="p-note" placeholder="аванс"></div>
-        <div><button class="act primary" id="p-add">Добавить</button></div>
+      <h2>Прошедшие смены</h2>
+      <div class="tablewrap">
+        <table id="t-arch" class="stack">
+          <thead><tr><th>Выезд</th><th>Домой</th><th class="num">Дней</th><th class="num">Начислено</th></tr></thead>
+          <tbody></tbody>
+        </table>
       </div>
-      <div class="tablewrap" style="margin-top:14px">
-        <table id="t-pays" class="stack">
-          <thead><tr><th>Дата</th><th class="num">Сумма</th><th>Комментарий</th><th></th></tr></thead>
+      <p class="hint" id="arch-empty" style="display:none">Пока ничего не закончилось.</p>
+    </div>
+
+    <div class="card">
+      <h2>Закрытые месяцы</h2>
+      <div class="tablewrap">
+        <table id="t-archm" class="stack">
+          <thead><tr><th>Месяц</th><th class="num">Дней</th><th class="num">Начислено</th><th class="num">Выплачено</th><th class="num">Остаток</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -489,13 +502,40 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
     var visible=(cur?[cur]:[]).concat(future.filter(function(x){ return x!==cur; }));
     visible.forEach(function(sh){ tb.appendChild(makeRow(sh)); });
 
-    var ab=document.querySelector("#t-arch tbody"); ab.innerHTML="";
-    past.forEach(function(sh){ ab.appendChild(makeRow(sh)); });
-    var det=document.getElementById("arch");
-    det.style.display = past.length ? "" : "none";
-    document.getElementById("arch-sum").textContent =
-      "Архив: "+past.length+" "+plural(past.length,"смена","смены","смен");
+    renderArchive(past);
   }
+
+  function renderArchive(past){
+    var rate=+S.rate||0, cur=S.cur||"";
+    var tb=document.querySelector("#t-arch tbody"); tb.innerHTML="";
+    document.getElementById("arch-empty").style.display = past.length ? "none" : "";
+    past.slice().reverse().forEach(function(sh){
+      var tr=document.createElement("tr");
+      tr.innerHTML='<td data-label="Выезд">'+fmt(sh.start)+'<span class="dow">'+DOW[sh.start.getDay()]+'</span></td>'+
+        '<td data-label="Домой">'+fmt(sh.home)+'<span class="dow">'+DOW[sh.home.getDay()]+'</span></td>'+
+        '<td class="num" data-label="Дней"><span class="pill shift">'+sh.days+' дн.</span></td>'+
+        '<td class="num" data-label="Начислено">'+money(sh.days*rate)+' '+cur+'</td>';
+      tb.appendChild(tr);
+    });
+
+    var now=new Date(), cy=now.getFullYear(), cm=now.getMonth();
+    var mb=document.querySelector("#t-archm tbody"); mb.innerHTML="";
+    monthKeys(buildAll()).forEach(function(x){
+      if(x.y>cy || (x.y===cy && x.m>=cm)) return;   // только полностью прошедшие месяцы
+      var po=payoutMonth(x.y,x.m);
+      var acc=x.days*rate, paid=paysOfMonth(po.y,po.m), rest=acc-paid;
+      var tr=document.createElement("tr");
+      tr.innerHTML='<td data-label="Месяц"><strong>'+MONTHS[x.m]+' '+x.y+'</strong></td>'+
+        '<td class="num" data-label="Дней">'+x.days+'</td>'+
+        '<td class="num" data-label="Начислено">'+money(acc)+'</td>'+
+        '<td class="num" data-label="Выплачено">'+(paid?money(paid):"—")+'</td>'+
+        '<td class="num '+(rest>0?"pos":(rest<0?"neg":""))+'" data-label="Остаток">'+money(rest)+'</td>';
+      mb.appendChild(tr);
+    });
+  }
+
+  var lastShifts=[];
+  function buildAll(){ return lastShifts; }
 
   function renderMoney(shifts){
     var rate=+S.rate||0, cur=S.cur||"";
@@ -564,6 +604,7 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
 
   function render(){
     var shifts=build();
+    lastShifts=shifts;
     renderShifts(shifts);
     renderMoney(shifts);
     renderReverse();
@@ -595,7 +636,7 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
     toast("Выплата добавлена");
   });
 
-  var tabs=[["tab-graf","p-graf"],["tab-money","p-money"]];
+  var tabs=[["tab-graf","p-graf"],["tab-money","p-money"],["tab-arch","p-arch"]];
   tabs.forEach(function(t){
     document.getElementById(t[0]).addEventListener("click",function(){
       tabs.forEach(function(x){
