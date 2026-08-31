@@ -108,6 +108,8 @@ button.act:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .state{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);margin-bottom:8px}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-3);flex:0 0 auto}
 .dot.on{background:var(--good)} .dot.err{background:var(--bad)}
+input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 0 0 2px var(--shift-soft)}
+.fixnote{display:block;font-family:"IBM Plex Sans",sans-serif;font-size:11px;color:var(--shift);margin-top:3px}
 .warnbar{border:1px solid var(--shift);background:var(--shift-soft);color:var(--ink);
   border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:10px;display:flex;
   flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
@@ -182,7 +184,7 @@ button.act:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
           </table>
         </div>
       </details>
-      <p class="hint">Обе даты — и выезд, и приезд — можно поправить руками прямо в строке; дальше всё пересчитается от них. Кнопка со стрелкой возвращает автоматический расчёт для этой смены.</p>
+      <p class="hint">Обе даты правятся руками прямо в строке. Если новый приезд делает смену короче, чем задано в «Дней в смене», выезд сдвигается автоматически и подсвечивается жёлтым — но его можно тут же поправить руками, тогда смена останется короткой и больше ничего не сдвинется. Кнопка со стрелкой возвращает автоматический расчёт для этой смены.</p>
     </div>
 
     <div class="card">
@@ -345,6 +347,8 @@ button.act:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
                  .reduce(function(a,p){ return a+(+p.sum||0); },0);
   }
 
+  var autoFix={};
+
   function makeRow(sh){
     var tr=document.createElement("tr");
 
@@ -352,11 +356,17 @@ button.act:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     var inp=document.createElement("input");
     inp.type="date"; inp.value=d2s(sh.start); inp.style.maxWidth="170px";
     inp.addEventListener("change",function(){
-      if(inp.value){ S.overrides[String(sh.i)]=inp.value; save(); render(); }
+      if(inp.value){ delete autoFix[String(sh.i)]; S.overrides[String(sh.i)]=inp.value; save(); render(); }
     });
     td1.appendChild(inp);
     var dw=document.createElement("span"); dw.className="dow"; dw.textContent=DOW[sh.start.getDay()];
     td1.appendChild(dw); td1.dataset.label="Выезд";
+    if(autoFix[String(sh.i)]){
+      inp.classList.add("fixed");
+      var note=document.createElement("span"); note.className="fixnote";
+      note.textContent="дата выезда пересчитана: смена была короче "+(+S.len||0)+" дн.";
+      td1.appendChild(note);
+    }
     tr.appendChild(td1);
 
     var td2=document.createElement("td");
@@ -364,8 +374,18 @@ button.act:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     inpH.type="date"; inpH.value=d2s(sh.home); inpH.style.maxWidth="170px";
     inpH.addEventListener("change",function(){
       if(!inpH.value) return;
-      if(s2d(inpH.value) < sh.start){ toast("Приезд не может быть раньше выезда"); inpH.value=d2s(sh.home); return; }
-      S.homes[String(sh.i)]=inpH.value; save(); render();
+      var nh=s2d(inpH.value);
+      if(nh < sh.start){ toast("Приезд не может быть раньше выезда"); inpH.value=d2s(sh.home); return; }
+      S.homes[String(sh.i)]=inpH.value;
+      var len=+S.len||1, days=Math.round((nh-sh.start)/86400000)+1;
+      if(days < len){
+        S.overrides[String(sh.i)]=d2s(addDays(nh,-(len-1)));
+        autoFix[String(sh.i)]=true;
+        toast("Смена короче "+len+" дн. — выезд сдвинут");
+      } else {
+        delete autoFix[String(sh.i)];
+      }
+      save(); render();
     });
     td2.appendChild(inpH);
     var dw2=document.createElement("span"); dw2.className="dow"; dw2.textContent=DOW[sh.home.getDay()];
@@ -385,7 +405,7 @@ button.act:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       var b=document.createElement("button");
       b.className="del"; b.title="вернуть автоматический расчёт"; b.textContent="↺";
       b.addEventListener("click",function(){
-        delete S.overrides[String(sh.i)]; delete S.homes[String(sh.i)]; save(); render();
+        delete S.overrides[String(sh.i)]; delete S.homes[String(sh.i)]; delete autoFix[String(sh.i)]; save(); render();
       });
       td6.appendChild(b);
     }
