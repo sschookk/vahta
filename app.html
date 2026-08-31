@@ -501,15 +501,17 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
     var wrap=document.getElementById("cur-wrap");
     if(cur){
       var left=Math.round((cur.home-today)/86400000);
-      wrap.innerHTML='<div class="now"><div class="k">Смена идёт</div>'+
+      var head = left===0 ? "Сегодня домой" : (cur.start.getTime()===today.getTime() ? "Сегодня выезд" : "Смена идёт");
+      var when = left===0 ? "последний день смены"
+                : "домой через "+left+" "+plural(left,"день","дня","дней")+" ("+DOW[cur.home.getDay()]+")";
+      wrap.innerHTML='<div class="now"><div class="k">'+head+'</div>'+
         '<div class="big">'+fmt(cur.start)+' — '+fmt(cur.home)+'</div>'+
-        '<div class="meta">'+cur.days+' дн. всего · домой через '+left+' '+plural(left,"день","дня","дней")+
-        ' ('+DOW[cur.home.getDay()]+') · потом дома '+cur.off+' дн.</div></div>';
+        '<div class="meta">'+cur.days+' дн. всего · '+when+' · потом дома '+cur.off+' дн.</div></div>';
     } else if(next){
       var till=Math.round((next.start-today)/86400000);
-      wrap.innerHTML='<div class="now"><div class="k">Сейчас дома</div>'+
+      wrap.innerHTML='<div class="now"><div class="k">'+(till===0?"Сегодня выезд":"Сейчас дома")+'</div>'+
         '<div class="big">выезд '+fmt(next.start)+' ('+DOW[next.start.getDay()]+')</div>'+
-        '<div class="meta">через '+till+' '+plural(till,"день","дня","дней")+
+        '<div class="meta">'+(till===0?"сегодня":(till===1?"завтра":"через "+till+" "+plural(till,"день","дня","дней")))+
         ' · смена до '+fmt(next.home)+', '+next.days+' дн.</div></div>';
     } else wrap.innerHTML="";
 
