@@ -232,7 +232,6 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
     </div>
 
     <div class="kpis" id="kpis"></div>
-    <p class="hint" id="totals" style="margin:-6px 0 16px"></p>
 
     <div class="card">
       <h2>По месяцам</h2>
@@ -513,11 +512,6 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
       kpi("Авансы в "+MONTHS_IN[cm], money(paidNow)+" "+cur, true)+
       kpi("ЗП в "+MONTHS_IN[po.m], money(curAcc-paidNow)+" "+cur, true, (curAcc-paidNow)>0?"pos":((curAcc-paidNow)<0?"neg":""));
 
-    var totRest=totalAcc-totalPaid;
-    document.getElementById("totals").innerHTML=
-      "За весь график: "+totalDays+" дн., начислено "+money(totalAcc)+" "+cur+
-      ", выплачено "+money(totalPaid)+" "+cur+", остаток "+money(totRest)+" "+cur+
-      ". Деньги за "+MONTHS[cm]+" придут в "+MONTHS_IN[po.m]+" "+po.y+".";
 
     var pb=document.querySelector("#t-pays tbody"); pb.innerHTML="";
     S.pays.slice().sort(function(a,b){ return a.date<b.date?-1:1; }).forEach(function(p){
