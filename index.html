@@ -271,7 +271,7 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
 
   <div class="rowbtns">
     <button class="act" id="b-link">Ссылка с данными</button>
-    <button class="act" id="b-export">Скачать копию</button>
+    <button class="act" id="b-export">Сохранить копию в файл</button>
     <button class="act" id="b-reset">Сбросить всё</button>
   </div>
   <p class="hint">Всё сохраняется само. Между устройствами — по коду синхронизации выше; ссылка с данными нужна, только если синхронизацию не включать.</p>
@@ -598,10 +598,16 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
   });
   document.getElementById("b-export").addEventListener("click",function(){
     var txt=JSON.stringify(S,null,2);
-    if(navigator.clipboard&&navigator.clipboard.writeText){
-      navigator.clipboard.writeText(txt).then(function(){ toast("Данные скопированы"); },
-                                             function(){ prompt("Данные:",txt); });
-    } else { prompt("Данные:",txt); }
+    try{
+      var blob=new Blob([txt],{type:"application/json"});
+      var a=document.createElement("a");
+      var d=new Date(), pad=function(n){ return (n<10?"0":"")+n; };
+      a.href=URL.createObjectURL(blob);
+      a.download="smeny-"+d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+".json";
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500);
+      toast("Копия сохранена");
+    }catch(e){ prompt("Данные:",txt); }
   });
   document.getElementById("b-reset").addEventListener("click",function(){
     if(!confirm("Сбросить настройки и все выплаты?")) return;
@@ -723,6 +729,7 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
         '<button class="act primary" id="sy-new">Включить и создать код</button>'+
         '<button class="act" id="sy-join">У меня уже есть код</button></div>';
       hint.textContent="Код нужен один раз на устройство. Данные шифруются в браузере: в облаке лежит нечитаемый блок.";
+      var lb0=document.getElementById("b-link"); if(lb0) lb0.style.display="";
       document.getElementById("sy-new").onclick=function(){
         var c=newCode();
         enableSync(c).then(function(){
@@ -746,6 +753,7 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
       '<button class="act" id="sy-now">Обновить сейчас</button>'+
       '<button class="act" id="sy-off">Отключить на этом устройстве</button></div>';
     hint.textContent="Код передавай отдельно от ссылки: ссылка публичная, а доступ к данным даёт только код.";
+    var lb=document.getElementById("b-link"); if(lb) lb.style.display="none";
     document.getElementById("sy-show").onclick=function(){ alert("Код графика:\n\n"+sync.code); };
     document.getElementById("sy-now").onclick=function(){ pull(true).catch(function(){ toast("Нет связи"); }); };
     document.getElementById("sy-off").onclick=function(){ if(confirm("Отключить синхронизацию на этом устройстве? Данные останутся в облаке.")) disableSync(); };
