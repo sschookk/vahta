@@ -60,7 +60,9 @@ h1{font-family:Archivo,sans-serif;font-weight:700;font-size:26px;letter-spacing:
 .card h2{font-family:Archivo,sans-serif;font-size:13px;letter-spacing:.08em;text-transform:uppercase;
   color:var(--ink-3);margin:0 0 12px;font-weight:600}
 .grid{display:grid;gap:12px}
-.settings{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.settings{grid-template-columns:minmax(150px,190px) 100px 100px 120px;gap:12px 16px;align-items:end}
+.checks{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:2px}
+.checks .check{margin-top:0}
 label{display:block;font-size:12px;color:var(--ink-2);margin-bottom:4px}
 input[type=date],input[type=number],input[type=text],select{
   width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);
@@ -132,7 +134,9 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
   .card h2{margin-bottom:9px}
   .kpi{padding:11px} .kpi .v{font-size:20px} .kpi .v.small{font-size:16px}
   .kpis{gap:8px;grid-template-columns:1fr 1fr}
-  .grid.settings{grid-template-columns:1fr 1fr;gap:9px}
+  .grid.settings{grid-template-columns:1fr 96px;gap:10px 12px}
+  .grid.settings > div:first-child{grid-column:1/-1}
+  .checks{flex-direction:column;gap:10px}
   .panel-inline{grid-template-columns:1fr 1fr;gap:9px}
   .check{margin-top:6px}
   table.stack thead{display:none}
@@ -174,8 +178,10 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
         <div><label for="s-len">Дней в смене</label><input type="number" id="s-len" min="1" max="120"></div>
         <div><label for="s-home">Дней дома</label><input type="number" id="s-home" min="0" max="60"></div>
         <div><label for="s-months">Показать месяцев</label><input type="number" id="s-months" min="1" max="24"></div>
-        <div><label class="check"><input type="checkbox" id="s-friday"> Домой только в пятницу</label></div>
-        <div><label class="check"><input type="checkbox" id="s-nowe"> Не выезжать и не приезжать в выходные</label></div>
+        <div class="checks">
+          <label class="check"><input type="checkbox" id="s-friday"> Домой только в пятницу</label>
+          <label class="check"><input type="checkbox" id="s-nowe"> Не выезжать и не приезжать в выходные</label>
+        </div>
       </div>
       <p class="hint">Смена считается от первого до последнего дня включительно. Если правило сдвигает дату, смена становится длиннее — это видно в таблице.</p>
     </div>
