@@ -701,6 +701,7 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
   var SB_URL="https://jwmlzcgthxlerewybppb.supabase.co";
   var SB_KEY="sb_publishable_qL8TpWBWf2KkQt5pgA22SQ_DFhCfkri";
   var CODE_KEY="vahta-code-v1";
+  var showCode=false;
   var sync={ code:null, id:null, key:null, at:null, busy:false, err:null, remoteNewer:null };
 
   function getCode(){ try{ return localStorage.getItem(CODE_KEY); }catch(e){ return null; } }
@@ -792,6 +793,7 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
     renderSync();
   }
   function disableSync(){
+    showCode=false;
     sync={ code:null, id:null, key:null, at:null, busy:false, err:null, remoteNewer:null };
     setCode(null); renderSync(); toast("Синхронизация выключена");
   }
@@ -807,9 +809,7 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
       var lb0=document.getElementById("b-link"); if(lb0) lb0.style.display="";
       document.getElementById("sy-new").onclick=function(){
         var c=newCode();
-        enableSync(c).then(function(){
-          alert("Код графика:\n\n"+c+"\n\nСохрани его в менеджер паролей. Без него данные не восстановить.");
-        });
+        enableSync(c).then(function(){ showCode=true; renderSync(); });
       };
       document.getElementById("sy-join").onclick=function(){
         var c=prompt("Введи код графика:");
@@ -823,13 +823,30 @@ input.fixed{border-color:var(--shift);background:var(--shift-soft);box-shadow:0 
       (sync.remoteNewer?'<div class="warnbar"><span>На другом устройстве есть изменения новее.</span>'+
         '<button class="act" id="sy-load">Загрузить их</button></div>':'')+
       '<div class="state"><span class="dot '+(sync.err?"err":"on")+'"></span>'+st+'</div>'+
+      (showCode?'<div class="code" id="sy-codebox">'+sync.code+'</div>'+
+                '<div class="rowbtns" style="margin:0 0 8px"><button class="act primary" id="sy-copy">Скопировать код</button></div>':'')+
       '<div class="rowbtns" style="margin-top:0">'+
-      '<button class="act" id="sy-show">Показать код</button>'+
+      '<button class="act" id="sy-show">'+(showCode?"Скрыть код":"Показать код")+'</button>'+
       '<button class="act" id="sy-now">Обновить сейчас</button>'+
       '<button class="act" id="sy-off">Отключить на этом устройстве</button></div>';
     hint.textContent="Код передавай отдельно от ссылки: ссылка публичная, а доступ к данным даёт только код.";
     var lb=document.getElementById("b-link"); if(lb) lb.style.display="none";
-    document.getElementById("sy-show").onclick=function(){ alert("Код графика:\n\n"+sync.code); };
+    document.getElementById("sy-show").onclick=function(){ showCode=!showCode; renderSync(); };
+    var cp=document.getElementById("sy-copy");
+    if(cp) cp.onclick=function(){
+      var t=sync.code;
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(t).then(function(){ toast("Код скопирован"); },
+                                             function(){ selectCode(); });
+      } else selectCode();
+    };
+    function selectCode(){
+      var el=document.getElementById("sy-codebox");
+      if(!el) return;
+      var r=document.createRange(); r.selectNodeContents(el);
+      var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      toast("Код выделен — скопируй вручную");
+    }
     document.getElementById("sy-now").onclick=function(){ pull(true).catch(function(){ toast("Нет связи"); }); };
     document.getElementById("sy-off").onclick=function(){ if(confirm("Отключить синхронизацию на этом устройстве? Данные останутся в облаке.")) disableSync(); };
     var l=document.getElementById("sy-load");
